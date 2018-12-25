@@ -1,5 +1,6 @@
 module.exports = {
 	list(req, res, next) {
+      console.log('user list');
 	    res.status(200).json({
 	  		message: 'users'
 	  	});

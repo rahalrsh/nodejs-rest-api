@@ -3,8 +3,9 @@ var router = express.Router();
 const listingsController = require('../controllers/listingsController');
 
 /*
-	GET /api/listings/
-	GET /api/listings/:listingId
+	GET  /api/listings/
+	GET  /api/listings/:listingId
+	POST /api/listings/
 */
 
 /* GET listings list. */
