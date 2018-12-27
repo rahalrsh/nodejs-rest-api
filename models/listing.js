@@ -6,6 +6,7 @@ module.exports = (sequelize, DataTypes) => {
   }, {});
   Listing.associate = function(models) {
     // associations can be defined here
+    Listing.hasOne(models.AccountListingIntermediate);
   };
   return Listing;
 };
