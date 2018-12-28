@@ -37,6 +37,25 @@ module.exports = {
       .catch((error) => next(error));
   },
 
+  getListingByUserIdandAccountIdandListingId(req, res, next){
+    const listingId = req.params.listingId;
+
+    return listingModel
+      .findById(listingId,{})
+      .then((listing) => {
+        if(!listing){
+          return res.status(200).send({
+              message: 'listing '+ listingId +' not found'
+          });
+        }
+        return res.status(200).send({
+          message: 'listing '+ listingId +' found',
+          listing: listing
+        });
+      })
+      .catch((error) => next(error));
+  },
+
   // POST '/:userId/accounts/:accountId/listings'
   postListingByUserIdandAccountId(req, res, next){
     let rsp = {};
@@ -81,25 +100,35 @@ module.exports = {
     })
   },
 
-  // GET '/:userId/accounts/:accountId/listings'
+  // GET 'users/:userId/accounts/:accountId/listings'
   getListingByUserIdandAccountId(req, res, next){
     const userId = req.params.userId;
     const accountId = req.params.accountId;
 
-    return accountModel
-      .findById(accountId,{
-        include: [
-          {
-            model: accountListingIntermediateModel,
-            include: [listingModel]
-          }
-        ]
+    return accountListingIntermediateModel
+      .findAll({
+        where: {AccountId: accountId},
+        include: [listingModel]
       })
-      .then((account) => {
-        return res.status(200).send({
-          message: 'All listings for user ' + userId,
-          account: account
-        });
+      .then((accountListingIntermediates) => {
+        if(!accountListingIntermediates){
+          return  res.status(200).json({
+            message: {
+              error: 'No listings found'
+            }
+          })
+        }
+
+        let listings = [];
+        for(accountListingIntermediate of accountListingIntermediates){
+          let listing = accountListingIntermediate.Listing;
+          listings.push(listing);
+        }
+
+        return  res.status(200).json({
+          message: "all listings",
+          listings: listings
+        })
       })
       .catch((error) => next(error));
   },
@@ -110,9 +139,10 @@ module.exports = {
     const accountId = req.params.accountId;
 
     return accountModel
-      .findById(accountId,{
+      /*.findById(accountId,{
         include : [userAccountIntermediateModel]
-      })
+      })*/
+      .findById(accountId)
       .then((account) => {
         if(!account){
           return res.status(200).send({
@@ -120,7 +150,7 @@ module.exports = {
           });
         }
 
-        let userAccountIntermediates = account.UserAccountIntermediates; //Account.hasMany(models.UserAccountIntermediate);
+        /*let userAccountIntermediates = account.UserAccountIntermediates; //Account.hasMany(models.UserAccountIntermediate);
         let allowed = false;
         for(userAccountIntermediate of userAccountIntermediates){
           allowed = allowed || (userId == userAccountIntermediate.UserId);
@@ -130,7 +160,7 @@ module.exports = {
           return res.status(200).send({
             message: 'Not allowed to access account ' + accountId
           });
-        }
+        }*/
 
         return res.status(200).send({
           message: 'Account found',
@@ -247,15 +277,17 @@ module.exports = {
             userId: rsp.user.id,
             email: rsp.user.email
           }, 
-          'secret123',
+          process.env.JWT_SECRET_KEY,
           {
             expiresIn: "1h"
           }
         );
         console.log(process.env.JWT_KEY);
-        return res.status(200).json({
-          message: "User Logged In",
-          token: token
+        // We set a custom header named 'x-auth-token'
+        // from UI read this token and send with header x-auth-token 
+        // in all subsequent requests
+        return res.status(200).header('x-auth-token', token).json({
+          message: "User Logged In"
         });
     })
   },

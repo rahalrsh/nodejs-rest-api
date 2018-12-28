@@ -9,6 +9,14 @@ const usersRouter = require('./routes/usersRoutes');
 
 const app = express();
 
+if(!process.env.JWT_SECRET_KEY){
+	console.error('FATAL ERROR: JWT_SECRET_KEY is not set in env vars');
+	process.exit(1);
+}
+else{
+	console.log('JWT_SECRET_KEY is set');
+}
+
 app.use(morganLogger('dev'));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
