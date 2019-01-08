@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const userModel = require('../models').User;
 const userAccountIntermediateModel = require('../models').UserAccountIntermediate;
-const accountListingIntermediateModel = require('../models').AccountListingIntermediate;
+const userListingIntermediateModel = require('../models').UserListingIntermediate;
 
 module.exports = {
 	authenticated(req, res, next) {
@@ -53,12 +53,12 @@ module.exports = {
   		});
   	},
 
-  	// is the account authorized to access the listing
+  	// is the user authorized to access the listing
   	listingAuthorized(req, res, next){
-  		return accountListingIntermediateModel
-  		.findOne({where: {AccountId: req.params.accountId, ListingId: req.params.listingId}})
-  		.then((accountListingIntermediate) => {
-  			if(!accountListingIntermediate){
+  		return userListingIntermediateModel
+  		.findOne({where: {UserId: req.userData.userId, ListingId: req.params.listingId}})
+  		.then((userListingIntermediate) => {
+  			if(!userListingIntermediate){
   				return res.status(401).json({
 					error: {
 						message: "Auth Failed: Not Authorized to access listing!"

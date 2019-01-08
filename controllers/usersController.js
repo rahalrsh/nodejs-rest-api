@@ -2,13 +2,14 @@ const userModel = require('../models').User;
 const accountModel = require('../models').Account;
 const listingModel = require('../models').Listing;
 const userAccountIntermediateModel = require('../models').UserAccountIntermediate;
-const accountListingIntermediateModel = require('../models').AccountListingIntermediate;
+const userListingIntermediateModel = require('../models').UserListingIntermediate;
 const async = require('async');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const rolesConsts = require('../conts/roles');
 
 module.exports = {
-	list(req, res, next) {
+  list(req, res, next) {
       return userModel
       .findAll({})
       .then((users) => res.status(200).json({
@@ -37,7 +38,8 @@ module.exports = {
       .catch((error) => next(error));
   },
 
-  getListingByUserIdandAccountIdandListingId(req, res, next){
+  // GET /:userId/listings/:listingId
+  getListingByUserIdandListingId(req, res, next){
     const listingId = req.params.listingId;
 
     return listingModel
@@ -56,11 +58,11 @@ module.exports = {
       .catch((error) => next(error));
   },
 
-  // POST '/:userId/accounts/:accountId/listings'
-  postListingByUserIdandAccountId(req, res, next){
+  // POST '/:userId/listings'
+  postListingByUserId(req, res, next){
     let rsp = {};
-    rsp.reqAccountId = req.params.accountId;
-    // const userId = req.params.userId;
+    // rsp.reqAccountId = req.params.accountId;
+    rsp.reqUserId = req.params.userId;
     // const accountId = req.params.accountId;
 
     const tasks = [
@@ -77,16 +79,16 @@ module.exports = {
           })
           .catch((error) => callback(error));
       },
-      function createAccountListingIntermediate(callback){
-        const newAccountListingIntermediate = {
-          AccountId : rsp.reqAccountId,
+      function createUserListingIntermediate(callback){
+        const newUserListingIntermediate = {
+          UserId : rsp.reqUserId,
           ListingId: rsp.listing.id,
         }
-        return accountListingIntermediateModel
-          .create(newAccountListingIntermediate)
-          .then((accountListingIntermediate) => {
-            rsp.accountListingIntermediate = accountListingIntermediate;
-            return callback(null, accountListingIntermediate);
+        return userListingIntermediateModel
+          .create(newUserListingIntermediate)
+          .then((userListingIntermediate) => {
+            rsp.userListingIntermediate = userListingIntermediate;
+            return callback(null, userListingIntermediate);
           })
           .catch((error) => callback(error));
       }
@@ -100,14 +102,13 @@ module.exports = {
     })
   },
 
-  // GET 'users/:userId/accounts/:accountId/listings'
-  getListingByUserIdandAccountId(req, res, next){
+  // GET 'users/:userId/listings'
+  getListingsByUserId(req, res, next){
     const userId = req.params.userId;
-    const accountId = req.params.accountId;
 
-    return accountListingIntermediateModel
+    return userListingIntermediateModel
       .findAll({
-        where: {AccountId: accountId},
+        where: {UserId: userId},
         include: [listingModel]
       })
       .then((accountListingIntermediates) => {
@@ -135,7 +136,7 @@ module.exports = {
 
   // GET users/:userId/accounts/:accountId
   getAccountByUserIdandAccountId(req, res, next){
-    const userId = req.params.userId;
+    // const userId = req.params.userId;
     const accountId = req.params.accountId;
 
     return accountModel
@@ -149,19 +150,6 @@ module.exports = {
             message: 'No account with id '+ accountId
           });
         }
-
-        /*let userAccountIntermediates = account.UserAccountIntermediates; //Account.hasMany(models.UserAccountIntermediate);
-        let allowed = false;
-        for(userAccountIntermediate of userAccountIntermediates){
-          allowed = allowed || (userId == userAccountIntermediate.UserId);
-        }
-
-        if(allowed == false){
-          return res.status(200).send({
-            message: 'Not allowed to access account ' + accountId
-          });
-        }*/
-
         return res.status(200).send({
           message: 'Account found',
           account: account
@@ -173,7 +161,6 @@ module.exports = {
   // users/:userId/accounts
   getAccountsByUserId(req, res, next) {
     const userId = req.params.userId;
-
     // user.userAccountIntermediate.account
     return userModel
       .findById(userId,{
@@ -222,7 +209,6 @@ module.exports = {
         });
       })
       .catch((error) => next(error));
-
   },
 
   loginUser(req, res, next){
@@ -275,7 +261,8 @@ module.exports = {
         // Generate JWT token
         const token = jwt.sign({
             userId: rsp.user.id,
-            email: rsp.user.email
+            email: rsp.user.email,
+            role: rsp.user.role
           }, 
           process.env.JWT_SECRET_KEY,
           {
@@ -328,11 +315,12 @@ module.exports = {
         });
       },
       function createUser(callback){
-        console.log("createUser");
+        console.log("createUser " + rolesConsts.User);
         const newUser = {
           username: req.body.username,
           email: req.body.email,
-          password: rsp.hash
+          password: rsp.hash,
+          role: rolesConsts.User
         }
 
         return userModel
@@ -377,8 +365,8 @@ module.exports = {
         const existingUser = results[0];
         const hash = results[1];
         const user = results[2];
-        const account = results[3];
-        const userAccountIntermediate = results[4];
+        // const account = results[3];
+        // const userAccountIntermediate = results[4];
         return res.status(200).json(results);
     })
   }

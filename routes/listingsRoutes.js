@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 const listingsController = require('../controllers/listingsController');
+const auth = require('../middleware/check-auth');
 
 /*
 	GET  /api/listings/
@@ -12,5 +13,7 @@ const listingsController = require('../controllers/listingsController');
 router.get('/', listingsController.list);
 router.get('/:listingId', listingsController.getByListingId);
 router.post('/', listingsController.addListing);
+
+router.put('/:listingId/like', auth.authenticated, listingsController.likeListing);
 
 module.exports = router;

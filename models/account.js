@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
   Account.associate = function(models) {
     // associations can be defined here
     Account.hasMany(models.UserAccountIntermediate);
-    Account.hasMany(models.AccountListingIntermediate);
+    // Account.hasMany(models.AccountListingIntermediate);
   };
   return Account;
 };
